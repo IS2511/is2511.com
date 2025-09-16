@@ -23,11 +23,15 @@
         
         body {
             /* font-family: -apple-system, BlinkMacSystemFont, sans-serif; */
+            background-color: #131314;
+            margin: 0;
+        }
+        main {
             line-height: 1.2;
             max-width: 600px;
             margin: auto;
             padding: 1rem;
-            background-color: #131314;
+            background-color: #131314E0;
             color: #e3e3e3;
         }
         section {
@@ -64,6 +68,7 @@
     </style>
 </head>
 <body>
+    <main>
     <section>
         <p>
             Hi! I'm Ivan, commonly known as <b class="monospace">is2511</b> or "<b class="monospace">is</b>".
@@ -155,5 +160,106 @@
     <section>
         <p>This highly advanced website is hosted by <a href="https://workers.cloudflare.com/">Cloudflare</a>, source code available on <a href="https://github.com/is2511/is2511.com">GitHub</a>.</p>
     </section>
+    </main>
+    <canvas id="background-canvas" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;"></canvas>
+    <script>
+        const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+        const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+
+        const canvas = document.getElementById("background-canvas");
+        const ctx = canvas.getContext("2d");
+
+        let scaleBasedOnViewportSize = 2;
+        if (vw < 600) scaleBasedOnViewportSize = 1;
+        const scale = (window.devicePixelRatio || 1) * scaleBasedOnViewportSize;
+        
+        canvas.width = vw;
+        canvas.height = vh;
+        ctx.scale(scale, scale);
+        const scaledCanvasWidth = Math.floor(canvas.width / scale);
+        const scaledCanvasHeight = Math.floor(canvas.height / scale);
+        ctx.fillStyle = "#131314";
+        ctx.fillRect(0, 0, scaledCanvasWidth, scaledCanvasHeight);
+
+        const ants = [];
+        for (let i = 0; i < 10; i++) {
+            ants.push({
+                x: Math.floor(Math.random() * scaledCanvasWidth),
+                y: Math.floor(Math.random() * scaledCanvasHeight),
+            });
+        }
+
+        // Spawn one ant on click
+        document.body.addEventListener("click", function(event) {
+            ants.push({
+                x: event.clientX / scale,
+                y: event.clientY / scale,
+            });
+        });
+
+        // Spawn many ants on down and hold
+        let mouseDown = false;
+        let antInfestation = null;
+        let holdStart = null;
+        let mouseX = 0;
+        let mouseY = 0;
+        document.body.addEventListener("mousedown", function(event) {
+            mouseDown = true;
+            holdStart = setTimeout(() => {
+                if (mouseDown) {
+                    antInfestation = setInterval(() => {
+                        ants.push({
+                            x: mouseX,
+                            y: mouseY,
+                        });
+                    }, 50);
+                }
+            }, 500);
+        });
+        document.body.addEventListener("mouseup", function(event) {
+            mouseDown = false;
+            if (holdStart) {
+                clearTimeout(holdStart);
+                holdStart = null;
+            }
+            if (antInfestation) {
+                clearInterval(antInfestation);
+                antInfestation = null;
+            }
+        });
+        document.body.addEventListener("mousemove", function(event) {
+            mouseX = event.clientX / scale;
+            mouseY = event.clientY / scale;
+        });
+
+        function frame() {
+            const now = (new Date().getTime()) / 1000;
+
+            // ctx.fillStyle = "#1313140D"; // ~5% opacity
+            // ctx.fillStyle = "#13131404";
+            // Someone please explain to my why the color part here basically barely matters
+            ctx.fillStyle = "#00000004";
+            ctx.fillRect(0, 0, scaledCanvasWidth, scaledCanvasHeight);
+
+            ctx.fillStyle = "#e3e3e3";
+            for (const ant of ants) {
+                switch (Math.floor(Math.random() * 4)) {
+                    case 0: ant.x += 1; break; // right
+                    case 1: ant.y += 1; break; // down
+                    case 2: ant.x -= 1; break; // left
+                    case 3: ant.y -= 1; break; // up
+                }
+                if (ant.x < 0) ant.x = scaledCanvasWidth - 1;
+                if (ant.x >= scaledCanvasWidth) ant.x = 0;
+                if (ant.y < 0) ant.y = scaledCanvasHeight - 1;
+                if (ant.y >= scaledCanvasHeight) ant.y = 0;
+                ctx.fillRect(ant.x, ant.y, 1, 1);
+            }
+
+            requestAnimationFrame(frame);
+        }
+
+        frame();
+    </script>
 </body>
 </html>
